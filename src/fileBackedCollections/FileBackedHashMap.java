@@ -38,7 +38,7 @@ public class FileBackedHashMap<K,V extends Serializable> extends HashMap<K, V>
 	 * hashmaps can store items with a null key.  this is a special case
 	 * bucket
 	 */
-	V nullValue;  // value for null key.
+	V nullValue = null;  // value for null key.
 	/**
 	 * put item into hashmap.  either replace an existing value or
 	 * add a new value for the key
