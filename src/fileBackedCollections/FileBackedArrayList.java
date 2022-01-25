@@ -598,10 +598,11 @@ public class FileBackedArrayList<E extends Serializable>
     	
     	if (o instanceof FileBackedArrayList ) {
     		final FileBackedArrayList<?> fbc = (FileBackedArrayList<?>) o;
-    		if (fbc.size() != size()) {
+    		if (fbc.size() != size() || fbc.hashCode != hashCode() ) {
     			return false;
     		}
-    		
+    		// here if he the sizes and hashcodes are equal, so the objects are probably equal
+    		// but we check each object.
     		for (int i = 0; i < size(); i++) {
     			if (!index.get(i).equals(fbc.index.get(i))) {
     				return false;
