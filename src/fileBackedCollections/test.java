@@ -69,11 +69,17 @@ public class test {
 			for (int j = 0; j < 10; j++) {
 				L[j] = rand.nextLong();
 			}
+			String y = "array: ";
+			for (int j = 0; j < L.length; j++) {
+				y += L[j] + " ";
+			}
+			print(y);
 			u.add(L);
 		}
 		u.add(new Long[5]);
 		for (int i = 0; i < u.size(); i++) {
 			Long[] x = u.get(i);
+			
 			String y = "array: ";
 			for (int j = 0; j < x.length; j++) {
 				y += x[j] + " ";
@@ -106,7 +112,7 @@ public class test {
 		}
 
 		for (int i = 0; i < NUM; i++) {
-			t.put(String.valueOf(i), String.valueOf(i*100));
+			t.put(String.valueOf(i), String.valueOf(i*1000));
 		}		
 		
 		for (int i = 0; i < NUM; i++) {
@@ -116,6 +122,8 @@ public class test {
 		for (int i = 0; i < NUM/2; i++) {
 			t.remove(String.valueOf(i) + "x");
 		}	
+		
+		t.put("10x", "this is the 10x value");
 		print("hash value 10x " + t.get("10x"));
 		print("hash value 100 " + t.get("100"));
 		t.put(null, "test null value");

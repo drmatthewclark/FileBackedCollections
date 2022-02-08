@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Random;
 
 public class FileBackedArrayList<E extends Serializable> 
 	extends ArrayList<E> implements Serializable {
@@ -27,8 +28,9 @@ public class FileBackedArrayList<E extends Serializable>
 	private ArrayList<IndexEntry> index = new ArrayList<IndexEntry>();
 	private File tempFile = null; // file object; could use just a String filename for this
 	private RandomAccessFile file = null; // RAF object stored in tempFile
+	private transient Random random = new Random();
+	private transient long seed = -1;
 	
-
 	FileBackedArrayList() {
 		boolean success = init();
 		if (!success) {
@@ -59,6 +61,7 @@ public class FileBackedArrayList<E extends Serializable>
 			try {
 				tempFile = createBackingFile();
 				file = new RandomAccessFile(tempFile, "rw");
+				seed = random.nextLong();
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 				return false;
@@ -159,9 +162,32 @@ public class FileBackedArrayList<E extends Serializable>
 			file.readFully(objbytes);
 		}
 		
-		return objbytes;
+		return encrypt(objbytes);
 	}
-	
+
+
+	/**
+	 * encrypt data using a combiner algorithm.  Each array has a different seed used for this XOR encryption.
+	 * This is a medium level encryption designed to make the data stored in the file non-obvious way
+	 * to thwart simple inspection. since the same seed is used for each object cryptographers could reverse engineer
+	 * the seed for many arrays with modest effort.
+	 * 
+	 * @param data
+	 * @return encrypted or decrypted data
+	 */
+	private byte[] encrypt(final byte[] data) {
+		
+		// reset the state, and modify the seed slightly by incorporating
+		// the data size
+		random.setSeed(seed ^ data.length );
+		final byte[] randombytes = new byte[data.length];
+		random.nextBytes(randombytes);
+		
+		for (int i = 0; i < data.length; i++) {
+			data[i] ^= randombytes[i];
+		}
+		return data;
+	}
 
 
 	/**
@@ -182,8 +208,9 @@ public class FileBackedArrayList<E extends Serializable>
 		}
 		
 		synchronized(file) {
+			
 			file.seek(file.length());
-			file.write(bytes);
+			file.write(encrypt(bytes));
 		}
 	}
 	
@@ -340,8 +367,7 @@ public class FileBackedArrayList<E extends Serializable>
 
 	/**
 	 * set the item at index 'indx', to 'item'. It writes the 
-	 * new item to the end of the file if longer, writes in place if the
-	 * size is equal or smaller.
+	 * new item to the end of the file,
 	 * 
 	 * @param indx integer index to set
 	 * @param item E item to add to collection
@@ -354,44 +380,23 @@ public class FileBackedArrayList<E extends Serializable>
 		}
 		
 		E result = null;
+		if (indx < size()) {
+			result = get(indx);
+		}
 		
 		try {
 			final byte[] entry = objectToBytes(item);
 			final int entry_len = entry != null ? entry.length : 0;
-			final IndexEntry old_idx = index.get(indx);
-			final int old_len = old_idx.getSize();
-			final long old_pos = old_idx.getPosition();
 			
-			if (entry_len <= old_len) {
-			// if the entry is same or smaller size, write in place into the
-			// random access file
-				
-				final IndexEntry idx = new IndexEntry(
-						old_pos, 
-						entry_len,
-						item);	
-				
-				if (entry != null) {
-					synchronized(file) {
-						file.seek(old_pos);
-						file.write(entry);
-					}
-				}
-				
-				result = get(indx);
-				index.set(indx, idx);
-				
-			} else {
-				
-				final IndexEntry idx = new IndexEntry(
-						fileSize(), 
-						entry_len,
-						item);
-				
-				write(entry);
-				result = this.get(indx);
-				index.set(indx, idx);
-			}
+			
+			final IndexEntry idx = new IndexEntry(
+					fileSize(), 
+					entry_len,
+					item);
+			
+			write(entry);
+			index.set(indx, idx);
+		
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -625,6 +630,7 @@ public class FileBackedArrayList<E extends Serializable>
      */
     protected void finalize() {
     	
+    	seed = -1;
     	if (index != null) index.clear();
     	if (tempFile != null && tempFile.exists()) {
     		tempFile.delete();
