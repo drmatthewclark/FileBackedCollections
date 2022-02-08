@@ -292,7 +292,7 @@ public class FileBackedArrayList<E extends Serializable>
 		
 		try {
 			IndexEntry ientry = index.get(indx);
-			if (ientry.getHash() == 0 || ientry.getSize() == 0 ) {
+			if (ientry.hashCode() == 0 || ientry.getSize() == 0 ) {
 				return null;
 			}
 			return bytesToObject(read(indx));
@@ -433,7 +433,7 @@ public class FileBackedArrayList<E extends Serializable>
 		
 		for (int i = 0; i < size(); i++) {
 			final IndexEntry entry = index.get(i);
-			if (entry.getHash() == objectHash) {
+			if (entry.hashCode() == objectHash) {
 				final E item = get(i);
 				if (item.equals(o)) {
 					return i;
@@ -587,7 +587,7 @@ public class FileBackedArrayList<E extends Serializable>
     public int hashCode() {
         int hashCode = 1;
         for (IndexEntry e : index)
-            hashCode = 31*hashCode + e.getHash();
+            hashCode = 31*hashCode + e.hashCode();
         
         return hashCode;
     }

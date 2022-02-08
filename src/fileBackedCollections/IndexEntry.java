@@ -30,10 +30,7 @@ class IndexEntry implements Serializable {
 	IndexEntry(long position, int size, Object object) {
 		this.position = position;
 		this.size = size;
-		objectHash = 0;
-		if (object != null) {
-			objectHash = Objects.hashCode(object);
-		}
+		objectHash = Objects.hashCode(object);
 	}
 	
 	/**
@@ -58,7 +55,7 @@ class IndexEntry implements Serializable {
 	 * 
 	 * @return int hash of object
 	 */
-	public int getHash() {
+	public int hashCode() {
 		return objectHash;
 	}
 	
@@ -68,14 +65,14 @@ class IndexEntry implements Serializable {
 	 * 
 	 * @return true if the object is equal to this, false otherwise
 	 */
-	public boolean equals(Object o) {
+	public boolean equals(final Object o) {
 
 		if (o instanceof IndexEntry) {
 			IndexEntry obj = (IndexEntry)o;
 			
 			return  position == obj.position && 
 					size == obj.size &&
-					objectHash == obj.objectHash;
+					hashCode() == obj.hashCode();
 		}
 		return false;
 	}
