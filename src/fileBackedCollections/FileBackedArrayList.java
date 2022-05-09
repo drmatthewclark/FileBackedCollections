@@ -309,23 +309,8 @@ public class FileBackedArrayList<E extends Serializable>
 	
 	@Override
 	public boolean add(E item) {
-
-		try {
-			int size = 0;
-			byte[] bytes = objectToBytes(item);
-			long position = file.length();
-			
-			if (bytes != null) {
-				size = bytes.length;
-			}
-			IndexEntry idx = new IndexEntry(position, size, item);
-			index.add(idx);
-			write(bytes, idx.getSeed());
-			
-		} catch (Exception e) {
-			System.err.println("add: " + e);
-		}
 		
+		add(index.size(), item);
 		return true;
 	}
 	
@@ -543,44 +528,6 @@ public class FileBackedArrayList<E extends Serializable>
 	}
 
 	/**
-	 * write object to an output stream.
-	 * 
-	 * @param out ObjectOutputStream to write to
-	 * @throws IOException on error.
-	 */
-	void writeObject(ObjectOutputStream out) throws IOException {
-		
-		out.writeInt(size()); // write number of objects in collection
-		
-		for (int i = 0; i < size(); i++) { // write elements
-			out.writeObject(get(i));
-			out.reset();
-		}
-	}
-	
-	/**
-	 * read this object from an input stream.
-	 * 
-	 * @param in ObjectInputStream to read from
-	 * @throws IOException on IO error
-	 */
-	void readObject(java.io.ObjectInputStream in) throws IOException {
-
-		clear();
-		try {
-			final int size = in.readInt(); // read number of objects in collection
-			for (int i = 0; i < size; i++) {
-				@SuppressWarnings("unchecked")
-				E item = (E) in.readObject();
-				add(item); // create a new index
-			}
-		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	
-	/**
 	 * Hashcode for this collection object
 	 * compute hashcode without having to read each object file
 	 * since the hashcodes are stored in the object
@@ -621,7 +568,7 @@ public class FileBackedArrayList<E extends Serializable>
     }
     
     private String outOfBoundsMsg(int index) {
-        return "Index: "+index+", Size: "+size();
+        return "Out of bounds Index: "+index+", Size: "+size();
     }
     
     /*
