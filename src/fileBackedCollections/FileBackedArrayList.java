@@ -16,6 +16,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -29,7 +30,7 @@ public class FileBackedArrayList<E extends Serializable>
 	private File tempFile = null; // file object; could use just a String filename for this
 	private RandomAccessFile file = null; // RAF object stored in tempFile
 	private transient Random random = new Random();
-	private transient long seed = -1;
+
 	
 	FileBackedArrayList() {
 		boolean success = init();
@@ -54,21 +55,22 @@ public class FileBackedArrayList<E extends Serializable>
 	/**
 	 *  initialization of the storage file
 	 *  @return true if the initialization seemed successful
+	 * @throws NoSuchAlgorithmException 
 	 */
-	boolean init() {
+	boolean init()  {
 		
 		if (tempFile == null && file == null) {
 			try {
 				tempFile = createBackingFile();
 				file = new RandomAccessFile(tempFile, "rw");
-				seed = random.nextLong();
+				
 			} catch (FileNotFoundException e) {
 				e.printStackTrace();
 				return false;
 			} catch (IOException e) {
 				e.printStackTrace();
 				return false;
-			}
+			} 
 		}
 		
 		return true;
@@ -162,7 +164,7 @@ public class FileBackedArrayList<E extends Serializable>
 			file.readFully(objbytes);
 		}
 		
-		return encrypt(objbytes);
+		return encrypt(objbytes, indx.getSeed());
 	}
 
 
@@ -175,11 +177,11 @@ public class FileBackedArrayList<E extends Serializable>
 	 * @param data
 	 * @return encrypted or decrypted data
 	 */
-	private byte[] encrypt(final byte[] data) {
+	private final byte[] encrypt(final byte[] data, final long seed) {
 		
 		// reset the state, and modify the seed slightly by incorporating
 		// the data size
-		random.setSeed(seed ^ data.length );
+		random.setSeed(seed);
 		final byte[] randombytes = new byte[data.length];
 		random.nextBytes(randombytes);
 		
@@ -196,7 +198,7 @@ public class FileBackedArrayList<E extends Serializable>
 	 * @param bytes bytes to write
 	 * @throws IOException
 	 */
-	private final void write(final byte[] bytes) throws IOException {
+	private final void write(final byte[] bytes, long seed) throws IOException {
 		
 		if (bytes == null) {
 			return;
@@ -210,7 +212,7 @@ public class FileBackedArrayList<E extends Serializable>
 		synchronized(file) {
 			
 			file.seek(file.length());
-			file.write(encrypt(bytes));
+			file.write(encrypt(bytes, seed));
 		}
 	}
 	
@@ -316,8 +318,9 @@ public class FileBackedArrayList<E extends Serializable>
 			if (bytes != null) {
 				size = bytes.length;
 			}
-			index.add(new IndexEntry(position, size, item));
-			write(bytes);
+			IndexEntry idx = new IndexEntry(position, size, item);
+			index.add(idx);
+			write(bytes, idx.getSeed());
 			
 		} catch (Exception e) {
 			System.err.println("add: " + e);
@@ -354,7 +357,7 @@ public class FileBackedArrayList<E extends Serializable>
 					entry != null ? entry.length : 0,
 					item);
 			
-			write(entry);
+			write(entry, idx.getSeed());
 			index.add(indx, idx);
 			
 		} catch (IOException e) {
@@ -394,7 +397,7 @@ public class FileBackedArrayList<E extends Serializable>
 					entry_len,
 					item);
 			
-			write(entry);
+			write(entry, idx.getSeed());
 			index.set(indx, idx);
 		
 			
@@ -630,7 +633,6 @@ public class FileBackedArrayList<E extends Serializable>
      */
     protected void finalize() {
     	
-    	seed = -1;
     	if (index != null) index.clear();
     	if (tempFile != null && tempFile.exists()) {
     		tempFile.delete();

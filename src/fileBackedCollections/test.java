@@ -12,6 +12,7 @@ public class test {
 	Random rand = new Random();
 	
 	public static void main(String[] args) throws Throwable {
+				
 		new test().testArrayList();
 		new test().testHashMap();
 		new test().testSet();

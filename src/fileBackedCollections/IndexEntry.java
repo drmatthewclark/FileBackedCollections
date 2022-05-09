@@ -4,6 +4,7 @@ package fileBackedCollections;
  * 
  */
 import java.io.Serializable;
+import java.security.SecureRandom;
 import java.util.Objects;
 
 /**
@@ -18,6 +19,8 @@ class IndexEntry implements Serializable {
 	private long position;
 	private int size;
 	private int objectHash;
+	private long seed;
+	private static SecureRandom seeder = null;
 	
 
 	/**
@@ -28,11 +31,28 @@ class IndexEntry implements Serializable {
 	 * @param object - object
 	 */
 	IndexEntry(long position, int size, Object object) {
+		
+		if (seeder == null) {
+			try {
+				seeder = SecureRandom.getInstanceStrong();
+			} catch (Exception e) {
+				System.err.println("IndexEntry:" + e);
+				return;
+			}
+		}
 		this.position = position;
 		this.size = size;
 		objectHash = Objects.hashCode(object);
+		this.seed = seeder.nextLong();
 	}
 	
+	/**
+	 * return encryption key for this entry
+	 * @return long key to encrypt this object
+	 */
+	public long getSeed() {
+		return seed;
+	}
 	/**
 	 * return size of object
 	 * @return integer size
