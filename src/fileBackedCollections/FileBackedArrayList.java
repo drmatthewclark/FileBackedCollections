@@ -171,16 +171,13 @@ public class FileBackedArrayList<E extends Serializable>
 	/**
 	 * encrypt data using a combiner algorithm.  Each array has a different seed used for this XOR encryption.
 	 * This is a medium level encryption designed to make the data stored in the file non-obvious way
-	 * to thwart simple inspection. since the same seed is used for each object cryptographers could reverse engineer
-	 * the seed for many arrays with modest effort.
+	 * to thwart simple inspection. 
 	 * 
 	 * @param data
 	 * @return encrypted or decrypted data
 	 */
 	private final byte[] encrypt(final byte[] data, final long seed) {
 		
-		// reset the state, and modify the seed slightly by incorporating
-		// the data size
 		random.setSeed(seed);
 		final byte[] randombytes = new byte[data.length];
 		random.nextBytes(randombytes);
